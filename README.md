@@ -1,10 +1,10 @@
 # RSCS - Really Simple Cookie Solution 🍪
 
-THIS IS FORK OF: (https://github.com/francescomugnai/RSCS-Really-Simple-Cookie-Solution)
+THIS IS A FORK OF: (https://github.com/francescomugnai/RSCS-Really-Simple-Cookie-Solution)
 #### Changes
 - CSS styles: removed the import font declaration to prevent loading external fonts, to make it more compliant with GDPR, especially for Germany
 - Config: added a new attribute "closeButton" (boolean, default: true) to have control whether to display the close button or not
-
+-------
 
 RSCS is a lightweight, easy-to-use cookie consent management solution for your web projects. 
 It's designed to be flexible, customizable, and compliant with GDPR and other cookie regulations.
