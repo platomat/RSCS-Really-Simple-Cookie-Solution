@@ -61,7 +61,7 @@
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 468px) {
   [data-cookie-banner-widget] .cookie-banner {
     width: var(--desktop-width, 380px);
     max-width: calc(100vw - 40px);
@@ -83,6 +83,16 @@
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   animation: slideInBottom 0.3s ease-out;
+}
+
+[data-cookie-banner-widget] .cookie-banner.center-center {
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: slideInCenterCenter 0.3s ease-out forwards;
+  will-change: transform;
 }
 
 [data-cookie-banner-widget] .cookie-banner.bottom-left {
@@ -472,6 +482,16 @@
   }
 }
 
+@keyframes slideInCenterCenter {
+  from {
+    transform: translate(-50%, 60%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
 
 @keyframes slideInBottom {
   from {
