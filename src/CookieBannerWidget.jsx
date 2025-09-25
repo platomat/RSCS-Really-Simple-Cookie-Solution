@@ -203,8 +203,9 @@ const CookieBannerWidget = {
               analytics={finalConfig.analytics}
             />
           )}
-          {showPreferencesButton && !document.getElementById(finalConfig.preferencesButtonId) &&
+          {finalConfig.showPreferencesButton && !document.getElementById(finalConfig.preferencesButtonId) &&
             <PreferencesButton
+              id={finalConfig.preferencesButtonId}
               onClick={handleTogglePreferences}
               color={finalConfig.preferencesButtonColor}
               language={lang}
