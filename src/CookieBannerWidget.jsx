@@ -13,6 +13,14 @@ import {
   autoBlockResources,
   setCookiePreferences,
 } from './utils/cookieManager';
+import {
+  applyConsentModeOnInit,
+  mapPreferencesToConsentState,
+  normalizeConsentModeConfig,
+  setConsentDefault,
+  updateConsentFromPreferences,
+} from './utils/consentMode';
+import { loadAnalytics } from './utils/analytics';
 import translations from './locales/translation';
 import PreferencesButton from './components/PreferencesButton';
 
@@ -20,6 +28,36 @@ const CookieBannerWidget = {
   initialized: false,
   callbacks: {},
   showPreferencesButton: false,
+  consentMode: null,
+
+  /**
+   * Part A — call as early as possible in <head> (before GTM), or rely on init().
+   * @param {{ waitForUpdate?: number }} [options]
+   */
+  setConsentDefault(options = {}) {
+    return setConsentDefault(options);
+  },
+
+  /**
+   * Part B — push gtag consent update from RSCS preferences.
+   * @param {Record<string, boolean> | null | undefined} preferences
+   * @param {{ mapping?: { analytics?: string, marketing?: string } }} [options]
+   */
+  updateConsent(preferences, options = {}) {
+    const mapping = options.mapping || this.consentMode?.mapping;
+    return updateConsentFromPreferences(preferences, { mapping });
+  },
+
+  /**
+   * @param {Record<string, boolean> | null | undefined} preferences
+   * @param {{ analytics?: string, marketing?: string }} [mapping]
+   */
+  mapPreferencesToConsentState(preferences, mapping) {
+    return mapPreferencesToConsentState(
+      preferences,
+      mapping || this.consentMode?.mapping,
+    );
+  },
 
   init(config = {}) {
     if (this.initialized) {
@@ -53,6 +91,21 @@ const CookieBannerWidget = {
       preferencesButtonColor: '#4299e1', 
       privacyPolicyUrl: null,
       showPreferencesButton: true,
+      /**
+       * Google Consent Mode v2 (default: enabled).
+       * Prefer CookieBannerWidget.setConsentDefault() in <head> before GTM;
+       * init() still sets default if missing and updates from stored preferences.
+       */
+      consentMode: {
+        enabled: true,
+        waitForUpdate: 500,
+        setDefaultOnInit: true,
+        updateOnInit: true,
+        mapping: {
+          analytics: 'analytics',
+          marketing: 'marketing',
+        },
+      },
       // googleAnalytics: {
       //   enabled: false,
       //   id: '',
@@ -84,7 +137,24 @@ const CookieBannerWidget = {
       }
     };
 
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = {
+      ...defaultConfig,
+      ...config,
+      consentMode: {
+        ...defaultConfig.consentMode,
+        ...(config.consentMode || {}),
+        mapping: {
+          ...defaultConfig.consentMode.mapping,
+          ...(config.consentMode?.mapping || {}),
+        },
+      },
+    };
+
+    this.consentMode = normalizeConsentModeConfig(finalConfig.consentMode);
+    finalConfig.consentMode = this.consentMode;
+
+    // Consent Mode: default (if not already set in <head>) + update for returning visitors.
+    applyConsentModeOnInit(this.consentMode, getCookiePreferences());
 
     this.callbacks = {
       onAccept: finalConfig.onAccept || (() => {}),
@@ -233,6 +303,10 @@ const CookieBannerWidget = {
   reset() {
     this.initialized = false;
     this.callbacks = {};
+    this.consentMode = null;
+    if (typeof window !== 'undefined') {
+      delete window.__rscsConsentDefaultSet;
+    }
     const container = document.getElementById('cookie-banner-container');
     if (container) {
       container.innerHTML = '';

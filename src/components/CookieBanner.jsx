@@ -8,6 +8,10 @@ import {
   getCookiePreferences,
   getBlockedElementsTitles
 } from '../utils/cookieManager';
+import {
+  normalizeConsentModeConfig,
+  updateConsentFromPreferences,
+} from '../utils/consentMode';
 import '../styles/CookieBanner.css';
 import autoAnimate from '@formkit/auto-animate';
 import translations from '../locales/translation';
@@ -126,6 +130,14 @@ const CookieBanner = ({
     }));
   };
 
+  const pushConsentUpdate = (preferences) => {
+    const consentMode = normalizeConsentModeConfig(config.consentMode);
+    if (!consentMode.enabled) {
+      return;
+    }
+    updateConsentFromPreferences(preferences, { mapping: consentMode.mapping });
+  };
+
   const handleAcceptAll = () => {
     const allAccepted = Object.keys(config.cookieTypes).reduce((acc, type) => {
       acc[type] = true;
@@ -134,6 +146,8 @@ const CookieBanner = ({
     setCookiePreferences(allAccepted);
     saveCookiePreferences(allAccepted);
     unblockResources();
+    // Consent update before host callbacks (e.g. GTM load) so tags see granted state.
+    pushConsentUpdate(allAccepted);
     
     if (analytics && analytics.enabled) {
       loadAnalytics(analytics.provider, analytics.config);
@@ -147,6 +161,7 @@ const CookieBanner = ({
     saveCookiePreferences(cookiePreferences);
     unblockResources();
     blockResources();
+    pushConsentUpdate(cookiePreferences);
 
     if (analytics && analytics.enabled) {
       if (cookiePreferences[analytics.category]) {
@@ -169,6 +184,7 @@ const CookieBanner = ({
     setCookiePreferences(allRejected);
     saveCookiePreferences(allRejected);
     blockResources();
+    pushConsentUpdate(allRejected);
     
     if (analytics && analytics.enabled) {
       removeAnalytics(analytics.provider);

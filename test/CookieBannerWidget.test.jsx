@@ -98,7 +98,7 @@ describe('CookieBannerWidget', () => {
       expect(preferencesButton).toBeInTheDocument();
       
       expect(preferencesButton.tagName.toLowerCase()).toBe('button');
-      expect(preferencesButton.getAttribute('aria-label')).toBe('Preferenze cookie');
+      expect(preferencesButton.getAttribute('aria-label')).toBe('Cookie preferences');
       
       const visuallyHiddenSpan = preferencesButton.querySelector('.visually-hidden');
       expect(visuallyHiddenSpan).toBeInTheDocument();

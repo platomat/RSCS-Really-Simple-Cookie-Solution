@@ -4,6 +4,7 @@ THIS IS A FORK OF: (https://github.com/francescomugnai/RSCS-Really-Simple-Cookie
 #### Changes
 - CSS styles: removed the import font declaration to prevent loading external fonts, to make it more compliant with GDPR, especially for Germany
 - Config: added a new attribute "closeButton" (boolean, default: true) to have control whether to display the close button or not
+- **Google Consent Mode v2**: default denied state + preference-based `gtag('consent', 'update')` (marketing → ad_*; analytics → analytics_storage). Enabled by default via `consentMode`.
 -------
 
 RSCS is a lightweight, easy-to-use cookie consent management solution for your web projects. 
@@ -17,6 +18,7 @@ It's designed to be flexible, customizable, and compliant with GDPR and other co
 - 🌐 Multi-language support
 - 🔒 Automatic resource blocking for popular tracking and analytics services
 - 🔧 Easy integration with Google Analytics
+- ✅ Google Consent Mode v2 (`consent default` + preference-based `consent update`)
 - 📱 Responsive design
 - 🔍 Granular cookie type control
 - 🎨 Customizable banner and preference UI with light and dark mode support
@@ -153,6 +155,65 @@ CookieBannerWidget.init({
 | position                 | string  | 'bottom-right'           | Position of the banner. Can be 'bottom-right', 'bottom-left', or 'bottom-center' |
 | preferencesButtonColor   | string  | '#4299e1'                | Color of the preferences button                              |
 | showPreferencesButton    | boolean | true                     | If false, the preferences button will not be shown
+| consentMode              | object  | See below                | Google Consent Mode v2 (`enabled` default true) |
+
+
+#### Google Consent Mode v2 ✅
+
+RSCS sets a Consent Mode **default** (all denied) and pushes a preference-based **update** on accept / reject / save and when returning visitors already have a cookie.
+
+**Recommended:** call the default as early as possible in `<head>` (before GTM):
+
+```html
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied',
+    wait_for_update: 500
+  });
+  window.__rscsConsentDefaultSet = true;
+</script>
+<!-- GTM / other tags AFTER this -->
+```
+
+Or call the API before `init` once the UMD bundle is loaded:
+
+```js
+CookieBannerWidget.setConsentDefault({ waitForUpdate: 500 });
+CookieBannerWidget.init({ /* … */ });
+```
+
+If the default was not set yet, `init()` sets it (idempotent via `__rscsConsentDefaultSet`).
+
+**Mapping**
+
+| Cookie category | Consent Mode signals |
+|-----------------|----------------------|
+| `marketing` | `ad_storage`, `ad_user_data`, `ad_personalization` |
+| `analytics` | `analytics_storage` |
+
+If preferences have no `marketing` key (site only exposes analytics), `analytics` also controls the ad_* signals.
+
+```js
+CookieBannerWidget.init({
+  consentMode: {
+    enabled: true,
+    waitForUpdate: 500,
+    setDefaultOnInit: true,
+    updateOnInit: true,
+    mapping: {
+      analytics: 'analytics',
+      marketing: 'marketing',
+    },
+  },
+});
+```
+
+Public helpers: `setConsentDefault()`, `updateConsent(preferences)`, `mapPreferencesToConsentState(preferences)`.
 
 
 #### Custom Preferences Button 🔘
